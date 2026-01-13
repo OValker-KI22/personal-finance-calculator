@@ -1,0 +1,93 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  # 1. ТЕСТЫ на GitHub серверах
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+    - name: Run tests
+      run: python -m pytest test_calculator.py -v
+
+  # 2. ДЕПЛОЙ на локальный компьютер (self-hosted runner)
+  deploy-to-production:
+    runs-on: self-hosted  # ВАЖНО: используем наш runner
+    needs: tests  # Ждём завершения тестов
+    if: github.event_name == 'push'  # Только при push
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to local Windows
+      shell: pwsh
+      run: |
+        Write-Host "=========================================" -ForegroundColor Cyan
+        Write-Host "🚀 DEPLOYING TO LOCAL PRODUCTION SERVER" -ForegroundColor Green
+        Write-Host "=========================================" -ForegroundColor Cyan
+        
+        # 1. Создаём продуктовую папку
+        $prodDir = "C:\personal-finance-prod"
+        Write-Host "Production directory: $prodDir"
+        
+        if (!(Test-Path $prodDir)) {
+          New-Item -ItemType Directory -Path $prodDir -Force
+          Write-Host "✅ Created production directory" -ForegroundColor Green
+        }
+        
+        # 2. Копируем файлы
+        Write-Host "`n📁 Copying files..." -ForegroundColor Yellow
+        $files = @("main.py", "requirements.txt", "test_calculator.py")
+        foreach ($file in $files) {
+          if (Test-Path $file) {
+            Copy-Item $file -Destination $prodDir -Force
+            Write-Host "  ✅ $file" -ForegroundColor Green
+          } else {
+            Write-Host "  ❌ $file (not found)" -ForegroundColor Red
+          }
+        }
+        
+        # 3. Создаем файл с информацией о деплое
+        $deployInfo = @"
+================================
+PERSONAL FINANCE CALCULATOR
+================================
+DEPLOYMENT INFORMATION:
+- Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+- Repository: ${{ github.repository }}
+- Commit: ${{ github.sha }}
+- Branch: ${{ github.ref }}
+- Deployed to: $prodDir
+
+INSTRUCTIONS:
+1. Open PowerShell
+2. Run: cd $prodDir
+3. Run: python main.py
+4. For tests: python -m pytest test_calculator.py -v
+================================
+"@
+        
+        $deployInfo | Out-File "$prodDir\DEPLOYMENT_INFO.txt" -Encoding UTF8
+        Write-Host "`n📝 Created deployment info file" -ForegroundColor Yellow
+        
+        # 4. Показываем результат
+        Write-Host "`n=========================================" -ForegroundColor Cyan
+        Write-Host "✅ DEPLOYMENT COMPLETED SUCCESSFULLY!" -ForegroundColor Green
+        Write-Host "=========================================" -ForegroundColor Cyan
+        Write-Host "`nProduction files:" -ForegroundColor Yellow
+        Get-ChildItem $prodDir | ForEach-Object { 
+          Write-Host "  - $($_.Name) ($($_.Length) bytes)" 
+        }
+        
+        Write-Host "`nTo run the application:" -ForegroundColor Magenta
+        Write-Host "  cd $prodDir"
+        Write-Host "  python main.py"
