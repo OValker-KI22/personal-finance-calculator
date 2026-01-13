@@ -10,9 +10,9 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4  # Обновлено до v4
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5  # Обновлено до v5
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -26,9 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build Docker image
       run: |
         docker build -t finance-calculator:latest .
@@ -53,14 +53,14 @@ jobs:
     needs: build-docker
     if: github.event_name == 'push'  # Только при push, не при PR
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Create deployment artifact
       run: |
         mkdir -p deployment
         cp -r main.py requirements.txt README.md deployment/
         echo "Deployment successful at $(date)" > deployment/deploy_info.txt
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # ОБНОВЛЕНО до v4!
       with:
         name: production-code
         path: deployment/
