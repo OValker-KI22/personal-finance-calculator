@@ -27,15 +27,19 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Simple Deploy to Windows
-      shell: pwsh
+      shell: powershell  
       run: |
         # Создаем папку
         $target = "C:\finance-app-production"
+        Write-Host "Target directory: $target"
+        
         if (!(Test-Path $target)) {
           New-Item -ItemType Directory -Path $target -Force
+          Write-Host "Created directory: $target"
         }
         
         # Копируем файлы
+        Write-Host "Copying files..."
         Copy-Item "main.py" -Destination $target -Force
         Copy-Item "requirements.txt" -Destination $target -Force
         Copy-Item "test_calculator.py" -Destination $target -Force
@@ -45,7 +49,9 @@ jobs:
         "Deployed: $time" | Out-File "$target\deploy.log" -Encoding UTF8
         
         # Выводим результат
-        Write-Host "✅ DEPLOYMENT SUCCESSFUL!" -ForegroundColor Green
-        Write-Host "Location: $target" -ForegroundColor Yellow
-        Write-Host "Files deployed:" -ForegroundColor Cyan
-        Get-ChildItem $target | ForEach-Object { Write-Host "  - $($_.Name)" }
+        Write-Host "=== DEPLOYMENT SUCCESSFUL! ==="
+        Write-Host "Location: $target"
+        Write-Host "Files deployed:"
+        Get-ChildItem $target | ForEach-Object { 
+          Write-Host "  - $($_.Name) ($($_.Length) bytes)" 
+        }
