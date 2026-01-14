@@ -57,12 +57,13 @@ jobs:
         }
         
         # 3. Создаем файл с информацией о деплое
+        $deployTime = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
         $deployInfo = @"
 ================================
 PERSONAL FINANCE CALCULATOR
 ================================
 DEPLOYMENT INFORMATION:
-- Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+- Time: $deployTime
 - Repository: ${{ github.repository }}
 - Commit: ${{ github.sha }}
 - Branch: ${{ github.ref }}
