@@ -5,7 +5,6 @@ on:
     branches: [ main ]
 
 jobs:
-  # 1. ТЕСТЫ на GitHub серверах
   tests:
     runs-on: ubuntu-latest
     steps:
@@ -19,76 +18,34 @@ jobs:
     - name: Run tests
       run: python -m pytest test_calculator.py -v
 
-  # 2. ДЕПЛОЙ на локальный компьютер (self-hosted runner)
   deploy-to-production:
-    runs-on: self-hosted  # ВАЖНО: используем наш runner
-    needs: tests  # Ждём завершения тестов
-    if: github.event_name == 'push'  # Только при push
+    runs-on: self-hosted
+    needs: tests
+    if: github.event_name == 'push'
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Deploy to local Windows
+    - name: Simple Deploy to Windows
       shell: pwsh
       run: |
-        Write-Host "=========================================" -ForegroundColor Cyan
-        Write-Host "🚀 DEPLOYING TO LOCAL PRODUCTION SERVER" -ForegroundColor Green
-        Write-Host "=========================================" -ForegroundColor Cyan
-        
-        # 1. Создаём продуктовую папку
-        $prodDir = "C:\personal-finance-prod"
-        Write-Host "Production directory: $prodDir"
-        
-        if (!(Test-Path $prodDir)) {
-          New-Item -ItemType Directory -Path $prodDir -Force
-          Write-Host "✅ Created production directory" -ForegroundColor Green
+        # Создаем папку
+        $target = "C:\finance-app-production"
+        if (!(Test-Path $target)) {
+          New-Item -ItemType Directory -Path $target -Force
         }
         
-        # 2. Копируем файлы
-        Write-Host "`n📁 Copying files..." -ForegroundColor Yellow
-        $files = @("main.py", "requirements.txt", "test_calculator.py")
-        foreach ($file in $files) {
-          if (Test-Path $file) {
-            Copy-Item $file -Destination $prodDir -Force
-            Write-Host "  ✅ $file" -ForegroundColor Green
-          } else {
-            Write-Host "  ❌ $file (not found)" -ForegroundColor Red
-          }
-        }
+        # Копируем файлы
+        Copy-Item "main.py" -Destination $target -Force
+        Copy-Item "requirements.txt" -Destination $target -Force
+        Copy-Item "test_calculator.py" -Destination $target -Force
         
-        # 3. Создаем файл с информацией о деплое
-        $deployTime = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-        $deployInfo = @"
-================================
-PERSONAL FINANCE CALCULATOR
-================================
-DEPLOYMENT INFORMATION:
-- Time: $deployTime
-- Repository: ${{ github.repository }}
-- Commit: ${{ github.sha }}
-- Branch: ${{ github.ref }}
-- Deployed to: $prodDir
-
-INSTRUCTIONS:
-1. Open PowerShell
-2. Run: cd $prodDir
-3. Run: python main.py
-4. For tests: python -m pytest test_calculator.py -v
-================================
-"@
+        # Пишем лог
+        $time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        "Deployed: $time" | Out-File "$target\deploy.log" -Encoding UTF8
         
-        $deployInfo | Out-File "$prodDir\DEPLOYMENT_INFO.txt" -Encoding UTF8
-        Write-Host "`n📝 Created deployment info file" -ForegroundColor Yellow
-        
-        # 4. Показываем результат
-        Write-Host "`n=========================================" -ForegroundColor Cyan
-        Write-Host "✅ DEPLOYMENT COMPLETED SUCCESSFULLY!" -ForegroundColor Green
-        Write-Host "=========================================" -ForegroundColor Cyan
-        Write-Host "`nProduction files:" -ForegroundColor Yellow
-        Get-ChildItem $prodDir | ForEach-Object { 
-          Write-Host "  - $($_.Name) ($($_.Length) bytes)" 
-        }
-        
-        Write-Host "`nTo run the application:" -ForegroundColor Magenta
-        Write-Host "  cd $prodDir"
-        Write-Host "  python main.py"
+        # Выводим результат
+        Write-Host "✅ DEPLOYMENT SUCCESSFUL!" -ForegroundColor Green
+        Write-Host "Location: $target" -ForegroundColor Yellow
+        Write-Host "Files deployed:" -ForegroundColor Cyan
+        Get-ChildItem $target | ForEach-Object { Write-Host "  - $($_.Name)" }
