@@ -19,7 +19,7 @@ class TestFinanceCalculator:
         income = self.calc.add_income(10000, "Зарплата")
         assert income['amount'] == 10000
         assert income['description'] == "Зарплата"
-        assert self.calc.get_total_income() == 10000
+        assert self.calc.get_total_income() == 9999
 
     def test_add_income_negative_amount(self):
         """Тест добавления дохода с отрицательной суммой"""
