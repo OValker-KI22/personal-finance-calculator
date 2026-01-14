@@ -18,7 +18,7 @@ class FinanceCalculator:
             'education': 0,
             'other': 0
         }
-
+#Проверка
     def add_income(self, amount: float, description: str = ""):
         """Добавление дохода"""
         if amount <= 0:
